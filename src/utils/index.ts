@@ -1,5 +1,6 @@
 import { MAX_COLS, MAX_ROWS, NUMBER_OF_BOMBS } from "../constants";
 import { Cell, CellState, CellValue } from "../types";
+import React from "react";
 
 export const generateCells = (): Cell[][] => {
   let cells: Cell[][] = [];
@@ -10,7 +11,8 @@ export const generateCells = (): Cell[][] => {
     for (let col = 0; col < MAX_COLS; col++) {
       cells[row].push({
         value: CellValue.None,
-        state: CellState.Visible, // todo 测试完后改回 open
+        // state: CellState.Visible, // to.do 测试完后改回 open
+        state: CellState.Open,
       });
     }
   }
