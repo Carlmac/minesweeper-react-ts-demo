@@ -1,7 +1,54 @@
 import { MAX_COLS, MAX_ROWS, NUMBER_OF_BOMBS } from "../constants";
 import { Cell, CellState, CellValue } from "../types";
-import React from "react";
+// import React from "react";
 
+// 获取周围 8 个格子的函数
+const grabAllAdjacentCells = (
+  cells: Cell[][],
+  rowParam: number,
+  colParam: number
+): {
+  topLeftCell: Cell | null;
+  topCell: Cell | null;
+  topRightCell: Cell | null;
+  rightCell: Cell | null;
+  bottomRightCell: Cell | null;
+  bottomCell: Cell | null;
+  bottomLeftCell: Cell | null;
+  leftCell: Cell | null;
+} => {
+  const topLeftCell =
+    rowParam > 0 && colParam > 0 ? cells[rowParam - 1][colParam - 1] : null;
+  const topCell = rowParam > 0 ? cells[rowParam - 1][colParam] : null;
+  const topRightCell =
+    rowParam > 0 && colParam < MAX_COLS - 1
+      ? cells[rowParam - 1][colParam + 1]
+      : null;
+  const rightCell =
+    colParam < MAX_COLS - 1 ? cells[rowParam][colParam + 1] : null;
+  const bottomRightCell =
+    rowParam < MAX_ROWS - 1 && colParam < MAX_COLS - 1
+      ? cells[rowParam + 1][colParam + 1]
+      : null;
+  const bottomCell =
+    rowParam < MAX_ROWS - 1 ? cells[rowParam + 1][colParam] : null;
+  const bottomLeftCell =
+    rowParam < MAX_ROWS - 1 && colParam > 0
+      ? cells[rowParam + 1][colParam - 1]
+      : null;
+  const leftCell = colParam > 0 ? cells[rowParam][colParam - 1] : null;
+
+  return {
+    topLeftCell,
+    topCell,
+    topRightCell,
+    rightCell,
+    bottomRightCell,
+    bottomCell,
+    bottomLeftCell,
+    leftCell,
+  };
+};
 export const generateCells = (): Cell[][] => {
   let cells: Cell[][] = [];
 
@@ -43,50 +90,40 @@ export const generateCells = (): Cell[][] => {
       let numberOfBombs = 0;
 
       // 获取当前格子的周围8个格子
-      const topLeftBomb =
-        rowIndex > 0 && colIndex > 0 ? cells[rowIndex - 1][colIndex - 1] : null;
-      const topBomb = rowIndex > 0 ? cells[rowIndex - 1][colIndex] : null;
-      const topRightBomb =
-        rowIndex > 0 && colIndex < MAX_COLS - 1
-          ? cells[rowIndex - 1][colIndex + 1]
-          : null;
-      const rightBomb =
-        colIndex < MAX_COLS - 1 ? cells[rowIndex][colIndex + 1] : null;
-      const bottomRightBomb =
-        rowIndex < MAX_ROWS - 1 && colIndex < MAX_COLS - 1
-          ? cells[rowIndex + 1][colIndex + 1]
-          : null;
-      const bottomBomb =
-        rowIndex < MAX_ROWS - 1 ? cells[rowIndex + 1][colIndex] : null;
-      const bottomLeftBomb =
-        rowIndex < MAX_ROWS - 1 && colIndex > 0
-          ? cells[rowIndex + 1][colIndex - 1]
-          : null;
-      const leftBomb = colIndex > 0 ? cells[rowIndex][colIndex - 1] : null;
+      const {
+        topLeftCell,
+        topCell,
+        topRightCell,
+        rightCell,
+        bottomRightCell,
+        bottomCell,
+        bottomLeftCell,
+        leftCell,
+      } = grabAllAdjacentCells(cells, rowIndex, colIndex);
 
       // 检查它们有没有地雷
-      if (topLeftBomb && topLeftBomb.value === CellValue.Bomb) {
+      if (topLeftCell && topLeftCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (topBomb && topBomb.value === CellValue.Bomb) {
+      if (topCell && topCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (topRightBomb && topRightBomb.value === CellValue.Bomb) {
+      if (topRightCell && topRightCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (rightBomb && rightBomb.value === CellValue.Bomb) {
+      if (rightCell && rightCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (bottomRightBomb && bottomRightBomb.value === CellValue.Bomb) {
+      if (bottomRightCell && bottomRightCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (bottomBomb && bottomBomb.value === CellValue.Bomb) {
+      if (bottomCell && bottomCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (bottomLeftBomb && bottomLeftBomb.value === CellValue.Bomb) {
+      if (bottomLeftCell && bottomLeftCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
-      if (leftBomb && leftBomb.value === CellValue.Bomb) {
+      if (leftCell && leftCell.value === CellValue.Bomb) {
         numberOfBombs += 1;
       }
 
@@ -100,4 +137,131 @@ export const generateCells = (): Cell[][] => {
   }
 
   return cells;
+};
+
+export const openMultipleCells = (
+  cells: Cell[][],
+  rowParam: number,
+  colParam: number
+): Cell[][] => {
+  const currentCell = cells[rowParam][colParam];
+
+  if (
+    currentCell.state === CellState.Visible ||
+    currentCell.state === CellState.Flagged
+  ) {
+    return cells;
+  }
+
+  let newCells = cells.slice();
+  newCells[rowParam][colParam].state = CellState.Visible;
+
+  const {
+    topLeftCell,
+    topCell,
+    topRightCell,
+    rightCell,
+    bottomRightCell,
+    bottomCell,
+    bottomLeftCell,
+    leftCell,
+  } = grabAllAdjacentCells(cells, rowParam, colParam);
+
+  if (
+    topLeftCell &&
+    topLeftCell.state === CellState.Open &&
+    topLeftCell.value !== CellValue.Bomb
+  ) {
+    if (topLeftCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam - 1, colParam - 1);
+    } else {
+      newCells[rowParam - 1][colParam - 1].state = CellState.Visible;
+    }
+  }
+
+  if (
+    topCell &&
+    topCell.state === CellState.Open &&
+    topCell.value !== CellValue.Bomb
+  ) {
+    if (topCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam - 1, colParam);
+    } else {
+      newCells[rowParam - 1][colParam].state = CellState.Visible;
+    }
+  }
+
+  if (
+    topRightCell &&
+    topRightCell.state === CellState.Open &&
+    topRightCell.value !== CellValue.Bomb
+  ) {
+    if (topRightCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam - 1, colParam + 1);
+    } else {
+      newCells[rowParam - 1][colParam + 1].state = CellState.Visible;
+    }
+  }
+
+  if (
+    rightCell &&
+    rightCell.state === CellState.Open &&
+    rightCell.value !== CellValue.Bomb
+  ) {
+    if (rightCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam, colParam + 1);
+    } else {
+      newCells[rowParam][colParam + 1].state = CellState.Visible;
+    }
+  }
+
+  if (
+    bottomRightCell &&
+    bottomRightCell.state === CellState.Open &&
+    bottomRightCell.value !== CellValue.Bomb
+  ) {
+    if (bottomRightCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam + 1, colParam + 1);
+    } else {
+      newCells[rowParam + 1][colParam + 1].state = CellState.Visible;
+    }
+  }
+
+  if (
+    bottomCell &&
+    bottomCell.state === CellState.Open &&
+    bottomCell.value !== CellValue.Bomb
+  ) {
+    if (bottomCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam + 1, colParam);
+    } else {
+      newCells[rowParam + 1][colParam].state = CellState.Visible;
+    }
+  }
+
+  if (
+    bottomLeftCell &&
+    bottomLeftCell.state === CellState.Open &&
+    bottomLeftCell.value !== CellValue.Bomb
+  ) {
+    if (bottomLeftCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam + 1, colParam - 1);
+    } else {
+      newCells[rowParam + 1][colParam - 1].state = CellState.Visible;
+    }
+  }
+
+  if (
+    leftCell &&
+    leftCell.state === CellState.Open &&
+    leftCell.value !== CellValue.Bomb
+  ) {
+    if (leftCell.value === CellValue.None) {
+      newCells = openMultipleCells(newCells, rowParam, colParam - 1);
+    } else {
+      newCells[rowParam][colParam - 1].state = CellState.Visible;
+    }
+  }
+
+  return newCells;
 };
